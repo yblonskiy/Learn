@@ -1,0 +1,16 @@
+﻿
+<div id="mainContainer">
+</div>
+
+@section Scripts {
+
+    @Scripts.Render("~/scripts/jquery.customerkey.js")
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            $("#mainContainer").customerkey();
+        });
+
+    </script>
+}

@@ -1,0 +1,139 @@
+﻿body {
+    padding-top: 50px;
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+#mainContainer {
+    display: block;
+    width: 800px;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.tabsContainer, .contentContainer {
+    display: block;
+    width: 100%;
+    float: left;
+    margin-top: 15px;
+}
+
+.contentContainer {
+    border: 1px solid lightgray;
+}
+
+#contentList {
+    display: none;
+}
+
+.tabs {
+    display: block;
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+    .tabs > li {
+        float: left;
+        padding: 5px 20px;
+        cursor: pointer;
+        border: 1px solid gray;
+        margin-right: 30px;
+    }
+
+        .tabs > li.active {
+            color: white;
+            cursor: pointer;
+            padding: 5px 20px;
+            background-color: cornflowerblue;
+        }
+
+td {
+    padding: 10px;
+}
+
+#labelResult {
+    padding: 3px 10px;
+    display: none;
+}
+
+.error {
+    color: red;
+}
+
+.success {
+    color: green;
+}
+
+#customerList {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    list-style-image: none;
+    position: relative;
+}
+
+#customerList > li {
+    padding: 5px 20px;
+    cursor: pointer;
+    margin-right: 30px;
+}
+
+.customerlist-icon {
+    width: 15px;
+    height: 15px;
+    line-height: 15px;
+    position: relative;
+    font-size: 20px;
+}
+
+.icon-close {
+    padding-right: 7px;
+    margin-left: -2px;
+}
+
+.icon-open {   
+    padding-right: 10px;
+}
+
+.customerlist-anchor, 
+.customerlist-anchor:link, 
+.customerlist-anchor:visited, 
+.customerlist-anchor:hover, 
+.customerlist-anchor:active {
+    line-height: 15px;
+    height: 15px;
+    text-decoration: none;
+    position: relative;
+}
+
+.customerlist-children {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    list-style-image: none;
+}
+
+.customerlist-node {
+    min-height: 24px;
+    line-height: 24px;
+    margin-left: 35px;
+    min-width: 24px;
+    font-size: 12px;
+}
