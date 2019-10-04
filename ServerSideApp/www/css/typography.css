@@ -1,0 +1,235 @@
+/**
+ * @file text.css
+ *    Basic text formatting styles.
+ */
+
+/* ----------------------------------- A ----------------------------------- */
+
+a:link {
+  color: #9B410E;
+}
+
+a:visited {
+  color: #A8775D;
+}
+
+a:active,
+a:hover,
+a:focus {
+  color: #D95A16;
+}
+
+address {
+ white-space: nowrap;
+}
+
+
+/* ----------------------------------- B ----------------------------------- */
+
+blockquote {
+ border-left: 3px solid #cdcdcd;
+ border-right: 3px solid #cdcdcd;
+ margin: 1em 0;
+ padding: 0 13px;
+ font-style: italic;
+}
+
+blockquote .quoteSource {
+ display: block;
+ margin-top: .1em;
+ text-align: right;
+}
+
+body,
+.grid {
+ font-size: 14px;
+ font-family: Verdana, Helvetica, Arial, sans-serif;
+}
+
+
+/* ----------------------------------- C ----------------------------------- */
+
+code,
+pre {
+ font-family: Monaco, "Courier New", Courier, monospace;
+ font-size: 1em;
+}
+
+.colMain blockquote,
+.colMain p {
+  line-height: 1.5em;
+}
+
+/* ----------------------------------- D ----------------------------------- */
+
+dl {
+ margin: 0;
+}
+
+dl dd {
+ margin: 0;
+ padding: 0 0 0 1em;
+}
+
+dl dt {
+ font-weight: normal;
+ margin-top: 0;
+}
+
+
+/* ----------------------------------- G ----------------------------------- */
+
+
+
+/* ----------------------------------- H ----------------------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+ margin: 1em 0 0;
+}
+
+h1,
+.head1 {
+ font-size: 1.3em;
+ font-weight: bold;
+ line-height: 1em;
+}
+
+h2,
+.head2 {
+ font-size: 1.15em;
+ font-weight: bold;
+ line-height: 1em;
+}
+
+h3,
+.head3 {
+ font-size: 1em;
+ font-weight: bold;
+ line-height: 1em;
+}
+
+h4,
+.head4 {
+ font-size: .8em;
+ font-weight: bold;
+ line-height: 1em;
+}
+
+h5,
+.head5 {
+ font-size: .65em;
+ font-weight: bold;
+ line-height: 1em;
+}
+
+h6,
+.head6 {
+ font-size: .5em;
+ font-weight: bold;
+}
+
+.heading {
+  border: 1px solid #73310A;
+  padding: 3px;
+  background-color: #FFFBEF;
+}
+
+
+/* ----------------------------------- L ----------------------------------- */
+
+li {
+ margin: .33em 0;
+}
+
+
+/* ----------------------------------- O ----------------------------------- */
+
+ol, ul {
+ margin: 1em 0;
+ padding-left: 26px;
+}
+
+ol.paragraph,
+ul.paragraph {
+ list-style-position: inside;
+ margin: 0;
+ padding-left: 0;
+}
+
+ol.paragraph li,
+ul.paragraph li {
+ margin: 1em 0;
+}
+
+ol.steps {
+ font-size: 1.33em;
+ font-weight: bold;
+}
+
+ol.steps li {
+ margin: .75em 0;
+}
+
+ol.steps li .stepContent {
+ font-size: .75em;
+ font-weight: normal;
+}
+
+
+/* ----------------------------------- P ----------------------------------- */
+
+p {
+ margin: 1em 1em;
+}
+
+pre {
+ font-family: Consolas, Monaco, "Courier New", Courier, monospace;
+ font-size: .8em;
+ background-color: #dddddd;
+ border-style: solid;
+ border-width: 1px;
+ border-color: #000000;
+ padding: 5px;
+ /* max-width: 600px; */
+ overflow: auto;
+ margin-top: 0;
+}
+
+p.dropcap:first-letter {
+  float: left;
+  font-size: 3em;
+  font-weight: bold;
+  line-height: 1em;
+}
+
+.php .comment,
+.smarty .comment {
+  color: #707070;
+}
+
+.php .operator,
+.smarty .operator {
+  color: #007700;
+}
+
+.php .keyword,
+.smarty .attribute,
+.smarty .keyword {
+  color: #0000BB;
+}
+
+.php .number,
+.smarty .number {
+  color: #FF00FF;
+}
+
+.php .string,
+.smarty .string {
+  color: #DD0000;
+}
+
+.php .variable,
+.smarty .variable {
+  color: #0075FF;
+}
+

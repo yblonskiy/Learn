@@ -1,0 +1,85 @@
+
+
+/* General font families for common tags */
+font,th,td,p{font:12px Verdana,Arial,Helvetica,sans-serif}
+a:link,a:active,a:visited { color : #333333; }
+a:hover		{ text-decoration: underline; color : #DD6900; }
+hr	{ height: 0px; border: solid #D1D7DC 0px; border-top-width: 1px;}
+
+
+/* This is the outline round the main forum tables */
+.forumline	{ background-color: #FFFFFF; border: 1px #000000 solid; }
+
+
+/* Header cells - the blue and silver gradient backgrounds */
+th	{
+  color: #FFFFFF; font-size: 11px; font-weight : bold;
+  background-color: #9B410E; height: 25px;
+}
+
+/*
+  Setting additional nice inner borders for the main table cells.
+  The names indicate which sides the border will be on.
+  Don't worry if you don't understand this, just ignore it :-)
+*/
+
+th.thTop, th.thCornerL,th.thCornerR {
+  font-weight: bold; border: #FFFFFF; border-style: solid; }
+
+th.thTop	 { border-width: 1px 0px 0px 0px; }
+th.thCornerL { border-width: 1px 0px 0px 1px; }
+th.thCornerR { border-width: 1px 1px 0px 0px; }
+
+
+/* The largest text used in the index page title and toptic title etc. */
+.maintitle,h1,h2	{
+  font-weight: bold; font-size: 22px; font-family: "Trebuchet MS",Verdana, Arial, Helvetica, sans-serif;
+  text-decoration: none; line-height : 120%; color : #FFFFFF;
+}
+
+/* Used for the navigation text, (Page 1,2,3 etc) and the navigation bar when in a forum */
+.nav			{ font-weight: bold; font-size: 11px; color : #000000;}
+a.nav			{ text-decoration: none; color : #333333; }
+a.nav:hover		{ text-decoration: underline; }
+
+
+/* titles for the topics: could specify viewed link colour too */
+.topictitle			{ font-weight: bold; font-size: 11px; color : #000000; }
+a.topictitle:link   { text-decoration: none; color : #333333; }
+a.topictitle:visited { text-decoration: none; color : #444444; }
+a.topictitle:hover	{ text-decoration: underline; color : #DD6900; }
+
+
+/* Name of poster in viewmsg.php and viewtopic.php and other places */
+.name			{ font-size : 11px; color : #000000;}
+
+/* Location, number of posts, post date etc */
+.postdetails		{ font-size : 10px; color : #000000; }
+
+/* Quote & Code blocks */
+.code {
+  font-family: Courier, 'Courier New', sans-serif; font-size: 11px; color: #006600;
+  background-color: #FAFAFA; border: #D1D7DC; border-style: solid;
+  border-left-width: 1px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px
+}
+
+/* Form elements */
+input,textarea, select {
+  color : #000000;
+  font: normal 11px Verdana, Arial, Helvetica, sans-serif;
+  border-color : #000000;
+}
+
+/* The text input fields background colour */
+input.post, textarea.post, select {
+  background-color : #FFFFFF;
+}
+
+input { text-indent : 2px; }
+
+/* The buttons used for bbCode styling in message post */
+input.button {
+  background-color : #EFEFEF;
+  color : #000000;
+  font-size: 11px; font-family: Verdana, Arial, Helvetica, sans-serif;
+}
