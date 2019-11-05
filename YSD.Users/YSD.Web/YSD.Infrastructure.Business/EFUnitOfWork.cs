@@ -47,6 +47,7 @@ namespace YSD.Infrastructure.Business
                 if (disposing)
                 {
                     db.Dispose();
+                    db = null;
                 }
 
                 this.disposed = true;

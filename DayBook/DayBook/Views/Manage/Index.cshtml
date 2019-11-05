@@ -1,0 +1,47 @@
+﻿@using DayBook.Web.ViewModels.Account
+@model IEnumerable<UserViewModel>
+@{
+    ViewData["Title"] = "Admin";
+}
+<div class="row">
+    <div class="col-md-6">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.NickName)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Email)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <form asp-controller="Manage" asp-action="Delete" method="post" id="deleteUser" class="navbar-right">
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.NickName)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Email)
+                            </td>
+                            <td>
+                                @if (item.Roles.Any(u => u == "User"))
+                                {
+                                    <button type="submit" name="id" value="@item.Id" class="btn btn-default  alert-danger">Delete</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </form>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
