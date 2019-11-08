@@ -20,11 +20,7 @@ namespace DayBook.Web.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public ActionResult Login(string returnUrl = "")
-        {
-            var model = new LoginViewModel { ReturnUrl = returnUrl };
-            return View(model);
-        }
+        public ActionResult Login(string returnUrl = "") => View(new LoginViewModel { ReturnUrl = returnUrl });
 
         //
         // POST: /Account/Login
@@ -35,7 +31,7 @@ namespace DayBook.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return View(model);
             }
 
             if (await _accountService.IsMarkedAsDeletedAsync(model.Email))
@@ -64,12 +60,17 @@ namespace DayBook.Web.Controllers
         // GET: /Account/Register
         [HttpGet]
         [AllowAnonymous]
-        [Route("[controller]/[action]")]
-        public ActionResult Register(string code)
+        [Route("[controller]/[action]/{code}")]
+        public async Task<ActionResult> Register(string code)
         {
             if (string.IsNullOrEmpty(code))
             {
-                return RedirectToAction("Login", "Account");
+                return BadRequest();
+            }
+
+            if (!await _accountService.IsExistInviteAsync(code))
+            {
+                return NotFound();
             }
 
             var model = new RegisterViewModel
@@ -88,33 +89,25 @@ namespace DayBook.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                string errorMsg = null;
-
-                foreach (var test in ModelState.Values)
-                {
-                    foreach (var msg in test.Errors)
-                    {
-                        errorMsg = msg.ErrorMessage;
-                    }
-                }
-                return BadRequest(errorMsg);
+                return View(model);
             }
 
-            if (await _accountService.RegisterUserAsync(new ApplicationUser
+            var result = await _accountService.RegisterUserAsync(new ApplicationUser
             {
                 UserName = model.Email,
                 NickName = model.NickName,
                 Email = model.Email
-            }, model.Password, model.Code))
-            {
-                HttpContext.Session.SetString("email", model.Email);
+            }, model.Password, model.Code);
 
-                return RedirectToAction("Index", "Record");
-            }
-            else
+            if (!result.Success)
             {
-                return new BadRequestObjectResult("Error of register a new user.");
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View(model);
             }
+
+            HttpContext.Session.SetString("email", model.Email);
+
+            return RedirectToAction("Index", "Record");
         }
 
         [HttpPost]
@@ -129,7 +122,8 @@ namespace DayBook.Web.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> Reopen(string email)
         {
-            var user = await _accountService.IsPossibleReopenAccountAsync(email);
+            var user = await _accountService.GetReopenUserAsync(email);
+
             if (user == null)
             {
                 return NotFound();
@@ -144,19 +138,21 @@ namespace DayBook.Web.Controllers
         {
             if (model.Email == null)
             {
-                return NotFound();
+                ModelState.AddModelError(string.Empty, "Email not found.");
+                return View(model);
             }
 
-            if (await _accountService.ReopenAccountAsync(model.Email))
-            {
-                HttpContext.Session.SetString("email", model.Email);
+            var result = await _accountService.ReopenAccountAsync(model.Email);
 
-                return RedirectToAction("Index", "Record");
-            }
-            else
+            if (!result.Success)
             {
-                return new BadRequestObjectResult("Error of re-open a account.");
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View(model);
             }
+
+            HttpContext.Session.SetString("email", model.Email);
+
+            return RedirectToAction("Index", "Record");
         }
 
         [HttpGet]

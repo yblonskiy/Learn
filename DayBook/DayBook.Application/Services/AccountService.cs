@@ -1,5 +1,6 @@
 ﻿using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
+using DayBook.Application.Communication;
 using DayBook.Application.Interfaces;
 using Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -39,35 +40,38 @@ namespace DayBook.Application.Services
         /// Register a new user
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> RegisterUserAsync(ApplicationUser user, string password, string code)
+        public async Task<UserResponse> RegisterUserAsync(ApplicationUser user, string password, string code)
         {
+            Invite invite = await _inviteRepository.GetSingleAsync(i => i.Code == code);
+
+            if (invite == null)
+            {
+                return new UserResponse("Invite not found.");
+            }
+
             try
             {
-                Invite invite = await _inviteRepository.GetSingleAsync(i => i.Code == code);
-
-                if (invite == null)
-                {
-                    return false;
-                }
-
                 var result = await _userManager.CreateAsync(user, password);
 
-                if (result.Succeeded)
+                if (!result.Succeeded)
                 {
-                    await _inviteRepository.DeleteAsync(invite);
-
-                    var userAccount = await _userManager.FindByEmailAsync(user.Email);
-
-                    await _userManager.AddToRoleAsync(userAccount, "User");
-
-                    await _signInManager.SignInAsync(userAccount, false);
-
-                    return true;
+                    return new UserResponse("An error occurred when creating a new user.");
                 }
-            }
-            catch { }
 
-            return false;
+                await _inviteRepository.DeleteAsync(invite);
+
+                var userAccount = await _userManager.FindByEmailAsync(user.Email);
+
+                await _userManager.AddToRoleAsync(userAccount, "User");
+                await _signInManager.SignInAsync(userAccount, false);
+
+                return new UserResponse(userAccount);
+            }
+            catch (Exception ex)
+            {
+                return new UserResponse($"An error occurred when registering the user: {ex.Message}");
+            }
+
         }
 
         /// <summary>
@@ -85,9 +89,8 @@ namespace DayBook.Application.Services
                     return true;
                 }
             }
-            catch (Exception ex)
+            catch
             {
-
             }
 
             return false;
@@ -102,6 +105,7 @@ namespace DayBook.Application.Services
             try
             {
                 var user = await _userManager.FindByEmailAsync(email);
+
                 if (user == null)
                 {
                     throw new ApplicationException("Unable to load user.");
@@ -126,56 +130,52 @@ namespace DayBook.Application.Services
             }
             catch (Exception ex)
             {
-
+                return false;
             }
-
-            return false;
         }
 
         /// <summary>
         /// Delete account
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> MarkAsDeletedAsync(string userName)
+        public async Task<UserResponse> MarkAsDeletedAsync(string userName)
         {
+            var user = await _userManager.FindByNameAsync(userName);
+
+            if (user == null)
+            {
+                return new UserResponse("User not found.");
+            }
+
+            user.DateDeleted = DateTime.Now;
+
             try
             {
-                var user = await _userManager.FindByNameAsync(userName);
-                if (user == null)
-                {
-                    throw new ApplicationException("Unable to load user.");
-                }
-
-                user.DateDeleted = DateTime.Now;
-
                 await _userManager.UpdateAsync(user);
 
-                return true;
+                return new UserResponse(user);
             }
             catch (Exception ex)
             {
-
+                return new UserResponse($"An error occurred when marking to delete the account: {ex.Message}");
             }
-
-            return false;
         }
-    
+
         /// <summary>
         /// Delete account
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> DeleteAccountAsync(string id)
+        public async Task<UserResponse> DeleteAccountAsync(string id)
         {
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+            {
+                return new UserResponse("User not found.");
+            }
+
             try
             {
-                var user = await _userManager.FindByIdAsync(id);
-                if (user == null)
-                {
-                    throw new ApplicationException("Unable to load user.");
-                }
-
-                // here must be transaction
-
                 // delete records
                 await _recordRepository.DeleteWhereAsync(r => r.UserId == user.Id);
 
@@ -190,36 +190,33 @@ namespace DayBook.Application.Services
                 // delete user
                 await _userManager.DeleteAsync(user);
 
-                return true;
+                return new UserResponse(user);
             }
             catch (Exception ex)
             {
-
+                return new UserResponse($"An error occurred when deleting the account: {ex.Message}");
             }
-
-            return false;
         }
 
         /// <summary>
         /// Check that user can re-open account
         /// </summary>
         /// <returns></returns>
-        public async Task<ApplicationUser> IsPossibleReopenAccountAsync(string email)
+        public async Task<ApplicationUser> GetReopenUserAsync(string email)
         {
             try
             {
                 var user = await _userManager.FindByEmailAsync(email);
-                if (user == null)
-                {
-                    throw new ApplicationException("Unable to load user.");
-                }
 
-                if (user.DateDeleted != null && user.DateDeleted >= DateTime.Now.AddDays(-2))
+                if (user != null)
                 {
-                    return user;
+                    if (user.DateDeleted != null && user.DateDeleted >= DateTime.Now.AddDays(-2))
+                    {
+                        return user;
+                    }
                 }
             }
-            catch (Exception ex)
+            catch
             {
             }
 
@@ -248,29 +245,27 @@ namespace DayBook.Application.Services
         /// Re-open account
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> ReopenAccountAsync(string email)
+        public async Task<UserResponse> ReopenAccountAsync(string email)
         {
+            var user = await GetReopenUserAsync(email);
+
+            if (user == null)
+            {
+                return new UserResponse("User not found.");
+            }
+
+            user.DateDeleted = null;
+
             try
             {
-                var user = await IsPossibleReopenAccountAsync(email);
-                if (user == null)
-                {
-                    throw new ApplicationException("Unable to load user.");
-                }
-
-                user.DateDeleted = null;
-
                 await _userManager.UpdateAsync(user);
 
-
-
-                return true;
+                return new UserResponse(user);
             }
             catch (Exception ex)
             {
+                return new UserResponse($"An error occurred when reopening the account: {ex.Message}");
             }
-
-            return false;
         }
 
         /// <summary>
@@ -280,6 +275,11 @@ namespace DayBook.Application.Services
         public async Task LogoutUserAsync()
         {
             await _signInManager.SignOutAsync();
+        }
+
+        public async Task<bool> IsExistInviteAsync(string code)
+        {
+            return await _inviteRepository.GetSingleAsync(i => i.Code == code) != null;
         }
 
     }
