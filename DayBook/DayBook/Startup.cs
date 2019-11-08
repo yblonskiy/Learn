@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using DayBook.Web;
+using DayBook.Web.Mapping;
+using AutoMapper;
 
 namespace DayBook
 {
@@ -85,10 +87,13 @@ namespace DayBook
 
             services.AddScoped<IManageService, ManageService>();
             services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IRecordService, RecordService>();
             services.AddScoped<IEmailSender, EmailSender>();
 
             services.AddHostedService<ConsumeScopedManageHostedService>();
             services.AddScoped<IScopedProcessingService, ScopedProcessingService>();
+
+            services.AddAutoMapper(new Type[] { typeof(MappingProfile) });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

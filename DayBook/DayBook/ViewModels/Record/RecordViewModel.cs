@@ -1,18 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
 namespace DayBook.Web.ViewModels.Record
 {
     public class RecordViewModel
-    {        
+    {
         public string Id { get; set; }
+
+        public string UserId { get; set; }
 
         [Required, MaxLength(100)]
         public string Title { get; set; }
-                
+
+        [Display(Name = "Date Created")]
         public DateTime DateCreated { get; set; }
 
         [Required]

@@ -1,5 +1,5 @@
 ﻿using ApplicationCore.Entities;
-using ApplicationCore.Interfaces;
+using AutoMapper;
 using DayBook.Application.Interfaces;
 using DayBook.Web.ViewModels.Record;
 using Microsoft.AspNetCore.Authorization;
@@ -11,18 +11,24 @@ using System.Threading.Tasks;
 namespace DayBook.Web.Controllers
 {
     [Authorize]
+    [Route("[controller]/[action]/{id?}")]
     public class RecordController : Controller
     {
-        private readonly IAccountService _accountService;        
-        private readonly IRepository<Record> _recordRepository;
+        private readonly IMapper _mapper;
+
+        private readonly IAccountService _accountService;
+        private readonly IRecordService _recordService;
 
         int pageSize = 5;
 
-        public RecordController(IRepository<Record> recordRepository,
-            IAccountService accountService)
+        public RecordController(IAccountService accountService,
+            IRecordService recordService,
+            IMapper mapper)
         {
-            _recordRepository = recordRepository;
+            _mapper = mapper;
+
             _accountService = accountService;
+            _recordService = recordService;
         }
 
         public async Task<IActionResult> Index(string currentFilter, string searchString, int? pageNumber)
@@ -44,7 +50,7 @@ namespace DayBook.Web.Controllers
 
             ViewData["CurrentFilter"] = searchString;
 
-            var records = _recordRepository.FindBy(r => r.UserId == user.Id);
+            var records = _recordService.ListByUserIdAsync(user.Id);
 
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -53,22 +59,21 @@ namespace DayBook.Web.Controllers
             }
 
             var recordsViewModel = records
+                .OrderByDescending(o => o.DateCreated)
                 .Select(r => new RecordViewModel()
                 {
                     Id = r.Id,
                     Title = r.Title,
                     DateCreated = r.DateCreated
-                }).AsQueryable();
-                       
+                })
+                .AsQueryable();
+
             return View(PaginatedList<RecordViewModel>.Create(recordsViewModel, pageNumber ?? 1, pageSize));
         }
 
         // GET: /Record/Create
         [HttpGet]
-        public ActionResult Create()
-        {
-            return View();
-        }
+        public ActionResult Create() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -76,13 +81,14 @@ namespace DayBook.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return View(model);
             }
 
             var user = await _accountService.GetUserAsync(User.Identity.Name);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user.");
+                ModelState.AddModelError(string.Empty, "Unable to load user.");
+                return View(model);
             }
 
             var record = new Record()
@@ -93,26 +99,34 @@ namespace DayBook.Web.Controllers
                 Body = model.Body
             };
 
-            await _recordRepository.AddAsync(record);
+            var result = await _recordService.AddAsync(record);
 
-            return RedirectToAction("Index", "Record");
+            if (!result.Success)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View(model);
+            }
+
+            return RedirectToAction("Index");
         }
 
         // GET: Record/Details/XXX
+        [HttpGet]
         public async Task<IActionResult> Details(string id)
         {
             if (id == null)
             {
-                return NotFound();
+                return BadRequest();
             }
 
             var user = await _accountService.GetUserAsync(User.Identity.Name);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user.");
+                ModelState.AddModelError(string.Empty, "Unable to load user.");
+                return View();
             }
 
-            var record = await _recordRepository.GetSingleAsync(r => r.Id.ToLower() == id.ToLower() && r.UserId == user.Id);
+            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
 
             if (record == null)
             {
@@ -131,20 +145,22 @@ namespace DayBook.Web.Controllers
         }
 
         // GET: Record/Edit/XXX
+        [HttpGet]
         public async Task<IActionResult> Edit(string id)
         {
             if (id == null)
             {
-                return NotFound();
+                return BadRequest();
             }
 
             var user = await _accountService.GetUserAsync(User.Identity.Name);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user.");
+                ModelState.AddModelError(string.Empty, "Unable to load user.");
+                return View();
             }
 
-            var record = await _recordRepository.GetSingleAsync(r => r.Id.ToLower() == id.ToLower() && r.UserId == user.Id);
+            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
 
             if (record == null)
             {
@@ -162,75 +178,45 @@ namespace DayBook.Web.Controllers
             return View(model);
         }
 
-        // POST: Record/Edit/XXX
-        [HttpPost, ActionName("Edit")]
+        // POST: Record/Edit
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditPost(string id, RecordViewModel model)
+        public async Task<IActionResult> Edit(RecordViewModel model)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return View(model);
             }
 
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
+            var record = _mapper.Map<RecordViewModel, Record>(model);
+            var result = await _recordService.UpdateAsync(model.Id, record);
+
+            if (!result.Success)
             {
-                throw new ApplicationException($"Unable to load user.");
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View(model);
             }
 
-            var updateRecord = await _recordRepository.GetSingleAsync(r => r.Id == id && r.UserId == user.Id);
-
-            if (updateRecord == null)
-            {
-                return NotFound();
-
-            }
-
-            updateRecord.Title = model.Title;
-            updateRecord.Body = model.Body;
-
-            try
-            {
-                await _recordRepository.UpdateAsync(updateRecord);
-
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Unable to save changes. " +
-                    "Try again, and if the problem persists, " +
-                    "see your system administrator.");
-            }
-
-            return View(new RecordViewModel
-            {
-                Id = updateRecord.Id,
-                Title = updateRecord.Title,
-                DateCreated = updateRecord.DateCreated,
-                Body = updateRecord.Body
-            });
+            return RedirectToAction("Index");
         }
 
         // GET: Record/Delete/XXX
-        public async Task<IActionResult> Delete(string id, bool? saveChangesError = false)
+        [HttpGet]
+        public async Task<IActionResult> Delete(string id)
         {
             if (id == null)
             {
-                return NotFound();
+                return BadRequest();
             }
 
             var user = await _accountService.GetUserAsync(User.Identity.Name);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user.");
+                ModelState.AddModelError(string.Empty, "Unable to load user.");
+                return View();
             }
 
-            var record = await _recordRepository.GetSingleAsync(r => r.Id == id && r.UserId == user.Id);
+            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
 
             if (record == null)
             {
@@ -239,58 +225,41 @@ namespace DayBook.Web.Controllers
 
             if (record.DateCreated < DateTime.Now.AddDays(-2))
             {
-                return BadRequest("You can't delete this record!");
+                ModelState.AddModelError(string.Empty, "You can't delete this record!");
+                return View();
             }
 
-            if (saveChangesError.GetValueOrDefault())
-            {
-                ViewData["ErrorMessage"] =
-                    "Delete failed. Try again, and if the problem persists " +
-                    "see your system administrator.";
-            }
+            var view = _mapper.Map<Record, RecordViewModel>(record);
+            return View(view);
 
-            return View(new RecordViewModel
-            {
-                Id = record.Id,
-                Title = record.Title,
-                DateCreated = record.DateCreated,
-                Body = record.Body
-            });
+            //return View(new RecordViewModel
+            //{
+            //    Id = record.Id,
+            //    Title = record.Title,
+            //    DateCreated = record.DateCreated,
+            //    Body = record.Body
+            //});
         }
 
         // POST: Record/Delete/XXX
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(string id)
+        public async Task<IActionResult> DeleteConfirm(string id)
         {
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
+            if (id == null)
             {
-                throw new ApplicationException($"Unable to load user.");
+                return BadRequest();
             }
 
-            var record = await _recordRepository.GetSingleAsync(r => r.Id == id && r.UserId == user.Id);
+            var result = await _recordService.DeleteAsync(id);
 
-            if (record == null)
+            if (!result.Success)
             {
-                return NotFound();
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View();
             }
 
-            if (record.DateCreated < DateTime.Now.AddDays(-2))
-            {
-                return BadRequest("You can't delete this record!");
-            }
-
-            try
-            {
-                await _recordRepository.DeleteAsync(record);
-
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                return RedirectToAction(nameof(Delete), new { id = id, saveChangesError = true });
-            }
+            return RedirectToAction("Index");
         }
     }
 }

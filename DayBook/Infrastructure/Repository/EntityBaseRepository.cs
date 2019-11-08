@@ -61,28 +61,31 @@ namespace Infrastructure.Repository
             return _context.Set<T>().Where(predicate);
         }
 
-        public virtual async Task AddAsync(T entity)
+        public virtual async Task<bool> AddAsync(T entity)
         {
             EntityEntry dbEntityEntry = _context.Entry<T>(entity);
             await _context.Set<T>().AddAsync(entity);
-            await _context.SaveChangesAsync();
+
+            return await CommitAsync();
         }
 
-        public virtual async Task UpdateAsync(T entity)
+        public virtual async Task<bool> UpdateAsync(T entity)
         {
             EntityEntry dbEntityEntry = _context.Entry<T>(entity);
             dbEntityEntry.State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+
+            return await CommitAsync();
         }
 
-        public virtual async Task DeleteAsync(T entity)
+        public virtual async Task<bool> DeleteAsync(T entity)
         {
             EntityEntry dbEntityEntry = _context.Entry<T>(entity);
             dbEntityEntry.State = EntityState.Deleted;
-            await _context.SaveChangesAsync();
+
+            return await CommitAsync();
         }
 
-        public virtual async Task DeleteWhereAsync(Expression<Func<T, bool>> predicate)
+        public virtual async Task<bool> DeleteWhereAsync(Expression<Func<T, bool>> predicate)
         {
             IEnumerable<T> entities = _context.Set<T>().Where(predicate);
 
@@ -91,12 +94,12 @@ namespace Infrastructure.Repository
                 _context.Entry<T>(entity).State = EntityState.Deleted;
             }
 
-            await _context.SaveChangesAsync();
+            return await CommitAsync();
         }
 
-        public virtual async Task CommitAsync()
+        public virtual async Task<bool> CommitAsync()
         {
-            await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }
