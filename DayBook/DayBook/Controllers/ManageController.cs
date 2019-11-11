@@ -6,7 +6,6 @@ using DayBook.Web.ViewModels.Manage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -28,6 +27,7 @@ namespace DayBook.Web.Controllers
             _emailSender = emailSender;
         }
 
+        [HttpGet]
         public IActionResult Index()
         {
             var users = _accountService.GetUsers().Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ToList();
@@ -47,10 +47,7 @@ namespace DayBook.Web.Controllers
 
         // GET: /Manage/SendInvite
         [HttpGet]
-        public ActionResult SendInvite()
-        {
-            return View();
-        }
+        public ActionResult SendInvite() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -58,31 +55,22 @@ namespace DayBook.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return View(model);
             }
 
-            var invite = new Invite()
+            var result = await _accountService.AddInviteAsync();
+
+            if (!result.Success)
             {
-                DateCreated = DateTime.Now
-            };
-
-            try
-            {
-                await _inviteRepository.AddAsync(invite);
-
-                string msg = $"Invite link: { Url.Action("Register", "Account", new { invite.Code }, "http")} ";
-
-                //await _emailSender.SendEmailAsync("admin@gmail.com",model.Email, "DayBook invite", msg);
-
-                model.StatusMessage = "Invite has been sent.";
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Unable to create invite changes. ");
-                model.StatusMessage = "Invite has not been sent.";
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View(model);
             }
 
-            return View(model);
+            string msg = $"Invite link: { Url.Action("Register", "Account", new { result.Resource.Code }, "http")} ";
+
+            //await _emailSender.SendEmailAsync("admin@gmail.com",model.Email, "DayBook invite", msg);
+
+            return RedirectToAction("SendInvite", "Manage");
         }
 
         // POST: Manage/Delete/XXX
@@ -92,16 +80,15 @@ namespace DayBook.Web.Controllers
         {
             if (id == null)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            try
-            {
-                await _accountService.DeleteAccountAsync(id);
-            }
-            catch (Exception ex)
-            {
+            var result = await _accountService.DeleteAccountAsync(id);
 
+            if (!result.Success)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View();
             }
 
             return RedirectToAction(nameof(Index));

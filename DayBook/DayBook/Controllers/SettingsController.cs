@@ -31,7 +31,14 @@ namespace DayBook.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAccount()
         {
-            await _accountService.MarkAsDeletedAsync(User.Identity.Name);
+            var result = await _accountService.MarkAsDeletedAsync(User.Identity.Name);
+
+            if (!result.Success)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View();
+            }
+
             await _accountService.LogoutUserAsync();
 
             return RedirectToAction("Login", "Account");

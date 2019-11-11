@@ -30,5 +30,7 @@ namespace DayBook.Application.Interfaces
         Task<ApplicationUser> GetUserAsync(string userName);
         
         Task<bool> IsExistInviteAsync(string code);
+
+        Task<InviteResponse> AddInviteAsync();
     }
 }

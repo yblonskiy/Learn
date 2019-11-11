@@ -268,6 +268,25 @@ namespace DayBook.Application.Services
             }
         }
 
+        public async Task<InviteResponse> AddInviteAsync()
+        {
+            var invite = new Invite()
+            {
+                DateCreated = DateTime.Now
+            };
+
+            try
+            {
+                await _inviteRepository.AddAsync(invite);
+
+                return new InviteResponse(invite);
+            }
+            catch (Exception ex)
+            {
+                return new InviteResponse($"An error occurred when adding a invite: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Logout
         /// </summary>
