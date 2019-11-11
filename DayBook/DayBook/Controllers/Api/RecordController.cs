@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using ApplicationCore.Entities;
+﻿using ApplicationCore.Entities;
 using AutoMapper;
 using DayBook.Application.Interfaces;
 using DayBook.Web.ViewModels.Record;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DayBook.Web.Controllers.Api
 {
@@ -36,14 +35,14 @@ namespace DayBook.Web.Controllers.Api
 
         // GET: api/Record
         [HttpGet]
-        public async Task<IActionResult> GetAll(string search, int? pageNumber)
+        public async Task<IActionResult> GetAllAsync(string search, int? pageNumber)
         {
             var user = await _accountService.GetUserAsync(User.Identity.Name);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user.");
+                return BadRequest(new { message = "Unable to load user." });
             }
-                     
+
             var records = _recordService.ListByUserIdAsync(user.Id);
 
             if (!string.IsNullOrEmpty(search))
@@ -52,22 +51,15 @@ namespace DayBook.Web.Controllers.Api
                                        || s.Body.Contains(search, StringComparison.CurrentCultureIgnoreCase));
             }
 
-            var recordsViewModel = records
-                .OrderByDescending(o => o.DateCreated)
-                .Select(r => new RecordViewModel()
-                {
-                    Id = r.Id,
-                    Title = r.Title,
-                    DateCreated = r.DateCreated
-                })
-                .AsQueryable();
+            var recordsDtos = _mapper.Map<IList<RecordViewModel>>(records
+                .OrderByDescending(o => o.DateCreated));
 
-            return Ok(PaginatedList<RecordViewModel>.Create(recordsViewModel, pageNumber ?? 1, pageSize));
+            return Ok(PaginatedList<RecordViewModel>.Create(recordsDtos.ToList().AsQueryable(), pageNumber ?? 1, pageSize));
         }
 
         // GET: api/Record/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetRecord(string id)
+        public async Task<IActionResult> GetRecordAsync(string id)
         {
             if (id == null)
             {
@@ -77,8 +69,7 @@ namespace DayBook.Web.Controllers.Api
             var user = await _accountService.GetUserAsync(User.Identity.Name);
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "Unable to load user.");
-                return NotFound();
+                return BadRequest(new { message = "Unable to load user." });
             }
 
             var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
@@ -95,20 +86,74 @@ namespace DayBook.Web.Controllers.Api
 
         // POST: api/Record
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<IActionResult> CreateAsync([FromBody] RecordViewModel model)
         {
+            var user = await _accountService.GetUserAsync(User.Identity.Name);
+            if (user == null)
+            {
+                return BadRequest(new { message = "Unable to load user." });
+            }
+
+            var record = new Record()
+            {
+                UserId = user.Id,
+                Title = model.Title,
+                DateCreated = DateTime.Now,
+                Body = model.Body
+            };
+
+            var result = await _recordService.AddAsync(record);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok();
         }
 
         // PUT: api/Record/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<IActionResult> EditAsync(string id, [FromBody] RecordViewModel model)
         {
+            if (id == null)
+            {
+                return BadRequest();
+            }
+
+            var user = await _accountService.GetUserAsync(User.Identity.Name);
+            if (user == null)
+            {
+                return BadRequest(new { message = "Unable to load user." });
+            }
+
+            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
+
+            if (record == null)
+            {
+                return NotFound();
+            }
+
+            return Ok();
         }
 
-        // DELETE: api/ApiWithActions/5
+        // DELETE: api/record/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> DeleteAsync(string id)
         {
+            if (id == null)
+            {
+                return BadRequest();
+            }
+
+            var result = await _recordService.DeleteAsync(id);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok();
         }
     }
 }

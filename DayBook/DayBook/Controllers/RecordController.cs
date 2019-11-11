@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace DayBook.Web.Controllers
 {
@@ -58,17 +59,10 @@ namespace DayBook.Web.Controllers
                                        || s.Body.Contains(searchString, StringComparison.CurrentCultureIgnoreCase));
             }
 
-            var recordsViewModel = records
-                .OrderByDescending(o => o.DateCreated)
-                .Select(r => new RecordViewModel()
-                {
-                    Id = r.Id,
-                    Title = r.Title,
-                    DateCreated = r.DateCreated
-                })
-                .AsQueryable();
+            var recordsDtos = _mapper.Map<IList<RecordViewModel>>(records
+               .OrderByDescending(o => o.DateCreated));
 
-            return View(PaginatedList<RecordViewModel>.Create(recordsViewModel, pageNumber ?? 1, pageSize));
+            return View(PaginatedList<RecordViewModel>.Create(recordsDtos.ToList().AsQueryable(), pageNumber ?? 1, pageSize));
         }
 
         // GET: /Record/Create
@@ -133,13 +127,7 @@ namespace DayBook.Web.Controllers
                 return NotFound();
             }
 
-            var model = new RecordViewModel
-            {
-                Id = record.Id,
-                Title = record.Title,
-                DateCreated = record.DateCreated,
-                Body = record.Body
-            };
+            var model = _mapper.Map<Record, RecordViewModel>(record);
 
             return View(model);
         }
@@ -167,13 +155,7 @@ namespace DayBook.Web.Controllers
                 return NotFound();
             }
 
-            var model = new RecordViewModel
-            {
-                Id = record.Id,
-                Title = record.Title,
-                DateCreated = record.DateCreated,
-                Body = record.Body
-            };
+            var model = _mapper.Map<Record, RecordViewModel>(record);
 
             return View(model);
         }
@@ -229,16 +211,9 @@ namespace DayBook.Web.Controllers
                 return View();
             }
 
-            var view = _mapper.Map<Record, RecordViewModel>(record);
-            return View(view);
+            var model = _mapper.Map<Record, RecordViewModel>(record);
 
-            //return View(new RecordViewModel
-            //{
-            //    Id = record.Id,
-            //    Title = record.Title,
-            //    DateCreated = record.DateCreated,
-            //    Body = record.Body
-            //});
+            return View(model);
         }
 
         // POST: Record/Delete/XXX
