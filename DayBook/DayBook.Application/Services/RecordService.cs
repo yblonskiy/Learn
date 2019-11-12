@@ -21,7 +21,7 @@ namespace DayBook.Application.Services
         /// Return record list by user id
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<Record> ListByUserIdAsync(string userId)
+        public IEnumerable<Record> ListByUserId(string userId)
         {
             return _recordRepository.FindBy(r => r.UserId == userId);
         }

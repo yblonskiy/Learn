@@ -7,6 +7,14 @@ using Microsoft.AspNetCore.Identity;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using DayBook.Application.Auth;
+using Microsoft.Extensions.Options;
 
 namespace DayBook.Application.Services
 {
@@ -20,12 +28,15 @@ namespace DayBook.Application.Services
         private readonly IRepository<ApplicationUser> _userRepository;
         private readonly IRepository<Record> _recordRepository;
 
+        private readonly JwtIssuerOptions _jwtOptions;
+
         public AccountService(UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
             IRepository<Invite> inviteRepository,
             IRepository<ApplicationUser> userRepository,
-            IRepository<Record> recordRepository)
+            IRepository<Record> recordRepository,
+            IOptions<JwtIssuerOptions> jwtOptions)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -34,6 +45,8 @@ namespace DayBook.Application.Services
             _inviteRepository = inviteRepository;
             _recordRepository = recordRepository;
             _userRepository = userRepository;
+
+            _jwtOptions = jwtOptions.Value;
         }
 
         /// <summary>
@@ -207,7 +220,7 @@ namespace DayBook.Application.Services
             try
             {
                 var user = await _userManager.FindByEmailAsync(email);
-
+                
                 if (user != null)
                 {
                     if (user.DateDeleted != null && user.DateDeleted >= DateTime.Now.AddDays(-2))
@@ -236,9 +249,24 @@ namespace DayBook.Application.Services
         /// Check that user can re-open account
         /// </summary>
         /// <returns></returns>
-        public async Task<ApplicationUser> GetUserAsync(string userName)
+        public async Task<ApplicationUser> GetUserByIdAsync(string userId)
         {
-            return await _userManager.FindByNameAsync(userName);
+            return await _userManager.FindByIdAsync(userId);
+        }
+
+        public async Task<ApplicationUser> GetVerifiedUserAsync(string email, string password)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+                return null;
+
+            if (await _userManager.CheckPasswordAsync(user, password))
+            {
+                return user;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -299,6 +327,25 @@ namespace DayBook.Application.Services
         public async Task<bool> IsExistInviteAsync(string code)
         {
             return await _inviteRepository.GetSingleAsync(i => i.Code == code) != null;
+        }
+
+        public string GenerateToken(string userId)
+        {
+            var JWToken = new JwtSecurityToken(
+                issuer: _jwtOptions.Audience,
+                audience: _jwtOptions.Audience,
+                claims: new Claim[]
+                {
+                     new Claim(ClaimTypes.Name, userId)
+                },
+                notBefore: new DateTimeOffset(DateTime.Now).DateTime,
+                expires: new DateTimeOffset(DateTime.Now.AddDays(1)).DateTime,
+                signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtOptions.SecretKey)), SecurityAlgorithms.HmacSha256Signature)
+            );
+
+            var token = new JwtSecurityTokenHandler().WriteToken(JWToken);
+
+            return token;
         }
 
     }

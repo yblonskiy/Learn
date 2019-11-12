@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace DayBook.Web.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("[controller]/[action]/{id?}")]
     public class RecordController : Controller
     {
@@ -32,14 +32,8 @@ namespace DayBook.Web.Controllers
             _recordService = recordService;
         }
 
-        public async Task<IActionResult> Index(string currentFilter, string searchString, int? pageNumber)
-        {
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                throw new ApplicationException($"Unable to load user.");
-            }
-
+        public IActionResult Index(string currentFilter, string searchString, int? pageNumber)
+        {           
             if (searchString != null)
             {
                 pageNumber = 1;
@@ -51,7 +45,7 @@ namespace DayBook.Web.Controllers
 
             ViewData["CurrentFilter"] = searchString;
 
-            var records = _recordService.ListByUserIdAsync(user.Id);
+            var records = _recordService.ListByUserId(User.Identity.Name);
 
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -78,16 +72,9 @@ namespace DayBook.Web.Controllers
                 return View(model);
             }
 
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, "Unable to load user.");
-                return View(model);
-            }
-
             var record = new Record()
             {
-                UserId = user.Id,
+                UserId = User.Identity.Name,
                 Title = model.Title,
                 DateCreated = DateTime.Now,
                 Body = model.Body
@@ -112,15 +99,8 @@ namespace DayBook.Web.Controllers
             {
                 return BadRequest();
             }
-
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, "Unable to load user.");
-                return View();
-            }
-
-            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
+           
+            var record = await _recordService.GetSingleByUserIdAsync(id, User.Identity.Name);
 
             if (record == null)
             {
@@ -140,15 +120,8 @@ namespace DayBook.Web.Controllers
             {
                 return BadRequest();
             }
-
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, "Unable to load user.");
-                return View();
-            }
-
-            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
+         
+            var record = await _recordService.GetSingleByUserIdAsync(id, User.Identity.Name);
 
             if (record == null)
             {
@@ -190,15 +163,8 @@ namespace DayBook.Web.Controllers
             {
                 return BadRequest();
             }
-
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, "Unable to load user.");
-                return View();
-            }
-
-            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
+          
+            var record = await _recordService.GetSingleByUserIdAsync(id, User.Identity.Name);
 
             if (record == null)
             {

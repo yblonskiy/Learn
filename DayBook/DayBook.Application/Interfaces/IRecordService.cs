@@ -8,7 +8,7 @@ namespace DayBook.Application.Interfaces
 {
     public interface IRecordService
     {
-        IEnumerable<Record> ListByUserIdAsync(string userId);
+        IEnumerable<Record> ListByUserId(string userId);
 
         Task<Record> GetSingleByUserIdAsync(string id, string userId);
 

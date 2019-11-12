@@ -1,10 +1,12 @@
-﻿using DayBook.Application.Interfaces;
+﻿using DayBook.Application.Auth;
+using DayBook.Application.Interfaces;
 using DayBook.Web.ViewModels.Account;
 using Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 
 namespace DayBook.Web.Controllers
@@ -12,10 +14,13 @@ namespace DayBook.Web.Controllers
     public class AccountController : Controller
     {
         private readonly IAccountService _accountService;
+        private readonly JwtIssuerOptions _jwtOptions;
 
-        public AccountController(IAccountService accountService)
+        public AccountController(IAccountService accountService,
+            IOptions<JwtIssuerOptions> jwtOptions)
         {
             _accountService = accountService;
+            _jwtOptions = jwtOptions.Value;
         }
 
         [HttpGet]
@@ -34,18 +39,19 @@ namespace DayBook.Web.Controllers
                 return View(model);
             }
 
+            var user = await _accountService.GetVerifiedUserAsync(model.Email, model.Password);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
             if (await _accountService.IsMarkedAsDeletedAsync(model.Email))
             {
                 return RedirectToAction(nameof(Reopen), new { email = model.Email });
             }
 
-            if (!await _accountService.LoginUserAsync(model.Email, model.Password))
-            {
-                ModelState.AddModelError(string.Empty, "Wrong username or password");
-                return View(model);
-            }
-
-            HttpContext.Session.SetString("email", model.Email);
+            HttpContext.Session.SetString("JWToken", _accountService.GenerateToken(user.Id));
 
             if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             {
@@ -55,6 +61,31 @@ namespace DayBook.Web.Controllers
             {
                 return RedirectToAction("Index", "Record");
             }
+
+
+
+
+            //if (await _accountService.IsMarkedAsDeletedAsync(model.Email))
+            //{
+            //    return RedirectToAction(nameof(Reopen), new { email = model.Email });
+            //}
+
+            //if (!await _accountService.LoginUserAsync(model.Email, model.Password))
+            //{
+            //    ModelState.AddModelError(string.Empty, "Wrong username or password");
+            //    return View(model);
+            //}
+
+            //HttpContext.Session.SetString("email", model.Email);
+
+            //if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            //{
+            //    return Redirect(model.ReturnUrl);
+            //}
+            //else
+            //{
+            //    return RedirectToAction("Index", "Record");
+            //}
         }
 
         // GET: /Account/Register
@@ -113,7 +144,8 @@ namespace DayBook.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Logout()
         {
-            await _accountService.LogoutUserAsync();
+            HttpContext.Session.Clear();
+            //await _accountService.LogoutUserAsync();
 
             return RedirectToAction("Login", "Account");
         }

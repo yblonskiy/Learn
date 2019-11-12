@@ -15,17 +15,7 @@ namespace DayBook.Web.Controllers
             _accountService = accountService;
         }
 
-        public async Task<IActionResult> Index()
-        {
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View();
-        }
+        public IActionResult Index() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]

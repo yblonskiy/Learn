@@ -35,15 +35,9 @@ namespace DayBook.Web.Controllers.Api
 
         // GET: api/Record
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync(string search, int? pageNumber)
+        public IActionResult GetAll(string search, int? pageNumber)
         {
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                return BadRequest(new { message = "Unable to load user." });
-            }
-
-            var records = _recordService.ListByUserIdAsync(user.Id);
+            var records = _recordService.ListByUserId(User.Identity.Name);
 
             if (!string.IsNullOrEmpty(search))
             {
@@ -66,13 +60,7 @@ namespace DayBook.Web.Controllers.Api
                 return BadRequest();
             }
 
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                return BadRequest(new { message = "Unable to load user." });
-            }
-
-            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
+            var record = await _recordService.GetSingleByUserIdAsync(id, User.Identity.Name);
 
             if (record == null)
             {
@@ -88,15 +76,9 @@ namespace DayBook.Web.Controllers.Api
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] RecordViewModel model)
         {
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                return BadRequest(new { message = "Unable to load user." });
-            }
-
             var record = new Record()
             {
-                UserId = user.Id,
+                UserId = User.Identity.Name,
                 Title = model.Title,
                 DateCreated = DateTime.Now,
                 Body = model.Body
@@ -120,14 +102,8 @@ namespace DayBook.Web.Controllers.Api
             {
                 return BadRequest();
             }
-
-            var user = await _accountService.GetUserAsync(User.Identity.Name);
-            if (user == null)
-            {
-                return BadRequest(new { message = "Unable to load user." });
-            }
-
-            var record = await _recordService.GetSingleByUserIdAsync(id, user.Id);
+            
+            var record = await _recordService.GetSingleByUserIdAsync(id, User.Identity.Name);
 
             if (record == null)
             {

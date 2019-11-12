@@ -27,10 +27,14 @@ namespace DayBook.Application.Interfaces
 
         IQueryable<ApplicationUser> GetUsers();
 
-        Task<ApplicationUser> GetUserAsync(string userName);
-        
+        Task<ApplicationUser> GetUserByIdAsync(string userId);
+
+        Task<ApplicationUser> GetVerifiedUserAsync(string userName, string password);
+
         Task<bool> IsExistInviteAsync(string code);
 
         Task<InviteResponse> AddInviteAsync();
+
+        string GenerateToken(string userId);
     }
 }
