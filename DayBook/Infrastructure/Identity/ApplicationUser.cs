@@ -9,7 +9,5 @@ namespace Infrastructure.Identity
         public string NickName { get; set; }
 
         public DateTime? DateDeleted { get; set; }
-
-        public ICollection<ApplicationUserRole> UserRoles { get; set; }
     }
 }

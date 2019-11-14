@@ -30,7 +30,7 @@ namespace DayBook.Web.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var users = _accountService.GetUsers().Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ToList();
+            var users = _accountService.GetUsers();
 
             var list = (from user in users
                         select new UserViewModel
@@ -38,8 +38,7 @@ namespace DayBook.Web.Controllers
                             Id = user.Id,
                             UserName = user.UserName,
                             NickName = user.NickName,
-                            Email = user.Email,
-                            Roles = user.UserRoles.Select(i => i.Role.ToString()).ToList()
+                            Email = user.Email
                         }).ToList();
 
             return View(list);

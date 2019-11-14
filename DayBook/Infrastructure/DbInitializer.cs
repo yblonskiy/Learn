@@ -11,11 +11,11 @@ namespace Infrastructure
     {
         private AppIdentityDbContext _context;
         private UserManager<ApplicationUser> _userManager;
-        private RoleManager<ApplicationRole> _roleManager;
+        private RoleManager<IdentityRole> _roleManager;
 
         public DbInitializer(AppIdentityDbContext context,
                              UserManager<ApplicationUser> userManager,
-                             RoleManager<ApplicationRole> roleManager)
+                             RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _userManager = userManager;
@@ -33,8 +33,8 @@ namespace Infrastructure
 
             var findAdminRole = await _roleManager.FindByNameAsync("Admin");
             var findUserRole = await _roleManager.FindByNameAsync("User");
-            var adminRole = new ApplicationRole("Admin");
-            var userRole = new ApplicationRole("User");
+            var adminRole = new IdentityRole("Admin");
+            var userRole = new IdentityRole("User");
 
             //If admin role does not exists, create it
             if (findAdminRole == null)

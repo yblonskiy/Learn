@@ -51,7 +51,7 @@ namespace DayBook.Web.Controllers
                 return RedirectToAction(nameof(Reopen), new { email = model.Email });
             }
 
-            HttpContext.Session.SetString("JWToken", _accountService.GenerateToken(user.Id));
+            HttpContext.Session.SetString("JWToken", await _accountService.GenerateToken(user));
 
             if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             {

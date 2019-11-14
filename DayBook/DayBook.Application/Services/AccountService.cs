@@ -1,20 +1,19 @@
 ﻿using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
+using DayBook.Application.Auth;
 using DayBook.Application.Communication;
 using DayBook.Application.Interfaces;
 using Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using DayBook.Application.Auth;
-using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+using DayBook.Application.Helpers;
 
 namespace DayBook.Application.Services
 {
@@ -22,7 +21,7 @@ namespace DayBook.Application.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private RoleManager<ApplicationRole> _roleManager;
+        private RoleManager<IdentityRole> _roleManager;
 
         private readonly IRepository<Invite> _inviteRepository;
         private readonly IRepository<ApplicationUser> _userRepository;
@@ -32,7 +31,7 @@ namespace DayBook.Application.Services
 
         public AccountService(UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            RoleManager<ApplicationRole> roleManager,
+            RoleManager<IdentityRole> roleManager,
             IRepository<Invite> inviteRepository,
             IRepository<ApplicationUser> userRepository,
             IRepository<Record> recordRepository,
@@ -220,7 +219,7 @@ namespace DayBook.Application.Services
             try
             {
                 var user = await _userManager.FindByEmailAsync(email);
-                
+
                 if (user != null)
                 {
                     if (user.DateDeleted != null && user.DateDeleted >= DateTime.Now.AddDays(-2))
@@ -329,15 +328,24 @@ namespace DayBook.Application.Services
             return await _inviteRepository.GetSingleAsync(i => i.Code == code) != null;
         }
 
-        public string GenerateToken(string userId)
+        public async Task<string> GenerateToken(ApplicationUser user)
         {
+            Claim[] claims = new[]
+                {
+                    new Claim(ClaimTypes.Name, user.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email)
+            };
+
+            ClaimsIdentity claimsIdentity = new ClaimsIdentity(claims, "Token");
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            claimsIdentity.AddClaims(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+
             var JWToken = new JwtSecurityToken(
                 issuer: _jwtOptions.Audience,
                 audience: _jwtOptions.Audience,
-                claims: new Claim[]
-                {
-                     new Claim(ClaimTypes.Name, userId)
-                },
+                claims: claimsIdentity.Claims,
                 notBefore: new DateTimeOffset(DateTime.Now).DateTime,
                 expires: new DateTimeOffset(DateTime.Now.AddDays(1)).DateTime,
                 signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtOptions.SecretKey)), SecurityAlgorithms.HmacSha256Signature)
@@ -347,6 +355,5 @@ namespace DayBook.Application.Services
 
             return token;
         }
-
     }
 }

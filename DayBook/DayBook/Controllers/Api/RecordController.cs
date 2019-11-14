@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace DayBook.Web.Controllers.Api
 {
-    [Authorize]
+    [Authorize(Policy = "ApiUser")]
     [Route("api/[controller]")]
     [ApiController]
     public class RecordController : ControllerBase
@@ -37,7 +37,9 @@ namespace DayBook.Web.Controllers.Api
         [HttpGet]
         public IActionResult GetAll(string search, int? pageNumber)
         {
-            var records = _recordService.ListByUserId(User.Identity.Name);
+            var userId = User.Claims.Single(c => c.Type == "id");
+
+            var records = _recordService.ListByUserId(userId.Value);
 
             if (!string.IsNullOrEmpty(search))
             {

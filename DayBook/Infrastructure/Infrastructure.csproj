@@ -5,6 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Identity\ApplicationRole.cs" />
+    <Compile Remove="Identity\ApplicationUserRole.cs" />
     <Compile Remove="Migrations\20191104133733_Initial3.cs" />
   </ItemGroup>
 

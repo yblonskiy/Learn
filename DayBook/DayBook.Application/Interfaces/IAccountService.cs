@@ -35,6 +35,6 @@ namespace DayBook.Application.Interfaces
 
         Task<InviteResponse> AddInviteAsync();
 
-        string GenerateToken(string userId);
+        Task<string> GenerateToken(ApplicationUser user);
     }
 }

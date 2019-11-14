@@ -20,6 +20,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Text;
 using DayBook.Application.Auth;
+using DayBook.Application.Helpers;
 
 namespace DayBook
 {
@@ -52,7 +53,7 @@ namespace DayBook
              options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
 
-            services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+            services.AddIdentity<ApplicationUser, IdentityRole>(options =>
            {
                options.Stores.MaxLengthForKeys = 128;
 
@@ -74,7 +75,7 @@ namespace DayBook
             // Add initial data in database
             services.AddTransient<DbInitializer>();
 
-
+            services.AddSingleton<IJwtFactory, JwtFactory>();
 
             // jwt wire up
             // Get options from app settings
@@ -86,35 +87,67 @@ namespace DayBook
                 options.Issuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)];
                 options.Audience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)];
                 options.SecretKey = jwtAppSettingOptions[nameof(JwtIssuerOptions.SecretKey)];
-                //options.SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtAppSettingOptions[nameof(JwtIssuerOptions.SecretKey)])), SecurityAlgorithms.HmacSha256);
+                options.SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtAppSettingOptions[nameof(JwtIssuerOptions.SecretKey)])), SecurityAlgorithms.HmacSha256);
             });
 
-            //var tokenValidationParameters = new TokenValidationParameters
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)],
+
+                ValidateAudience = true,
+                ValidAudience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
+
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtAppSettingOptions[nameof(JwtIssuerOptions.SecretKey)])),
+
+                RequireExpirationTime = false,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+            }).AddJwtBearer(configureOptions =>
+            {
+                configureOptions.ClaimsIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)];
+                configureOptions.TokenValidationParameters = tokenValidationParameters;
+                configureOptions.SaveToken = true;
+            });
+
+            // api user claim policy
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("ApiUser", policy => policy.RequireClaim(Constants.Strings.JwtClaimIdentifiers.Rol, Constants.Strings.JwtClaims.ApiAccess));
+            });
+
+
+
+            ////Configure JWT Token Authentication
+            //services.AddAuthentication(auth =>
             //{
-            //    ValidateIssuer = true,
-            //    ValidIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)],
-
-            //    ValidateAudience = true,
-            //    ValidAudience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
-
-            //    ValidateIssuerSigningKey = true,
-            //    IssuerSigningKey = _signingKey,
-
-            //    RequireExpirationTime = false,
-            //    ValidateLifetime = true,
-            //    ClockSkew = TimeSpan.Zero
-            //};
-
-            //services.AddAuthentication(options =>
+            //    auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            //    auth.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            //})
+            //.AddJwtBearer(token =>
             //{
-            //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
-            //}).AddJwtBearer(configureOptions =>
-            //{
-            //    configureOptions.ClaimsIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)];
-            //    configureOptions.TokenValidationParameters = tokenValidationParameters;
-            //    configureOptions.SaveToken = true;
+            //    token.RequireHttpsMetadata = false;
+            //    token.SaveToken = true;
+            //    token.TokenValidationParameters = new TokenValidationParameters
+            //    {
+            //        ValidateIssuerSigningKey = true,
+            //        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtAppSettingOptions[nameof(JwtIssuerOptions.SecretKey)])),
+            //        ValidateIssuer = true,
+            //        ValidIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
+            //        ValidateAudience = true,
+            //        ValidAudience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
+            //        RequireExpirationTime = true,
+            //        ValidateLifetime = true,
+            //        ClockSkew = TimeSpan.Zero
+            //    };
             //});
 
             //// api user claim policy
@@ -124,67 +157,6 @@ namespace DayBook
             //});
 
 
-
-
-            //services.AddAuthentication(x =>
-            //{
-            //    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            //    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            //})
-            //.AddJwtBearer(x =>
-            //{
-            //    x.Events = new JwtBearerEvents
-            //    {
-            //        OnTokenValidated = context =>
-            //        {
-            //            //var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
-            //            var userId = int.Parse(context.Principal.Identity.Name);
-
-            //            return Task.CompletedTask;
-            //        }
-            //    };
-            //    x.RequireHttpsMetadata = false;
-            //    x.SaveToken = true;
-            //    x.TokenValidationParameters = new TokenValidationParameters
-            //    {
-            //        ValidateIssuerSigningKey = true,
-            //        IssuerSigningKey = _signingKey,
-            //        ValidateIssuer = false,
-            //        ValidateAudience = false
-            //    };
-            //});
-
-
-
-            //Configure JWT Token Authentication
-            services.AddAuthentication(auth =>
-            {
-                auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                auth.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(token =>
-            {
-                token.RequireHttpsMetadata = false;
-                token.SaveToken = true;
-                token.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtAppSettingOptions[nameof(JwtIssuerOptions.SecretKey)])),
-                    ValidateIssuer = true,
-                    ValidIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
-                    ValidateAudience = true,
-                    ValidAudience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
-                    RequireExpirationTime = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-            });
-
-            //// api user claim policy
-            //services.AddAuthorization(options =>
-            //{
-            //    options.AddPolicy("ApiUser", policy => policy.RequireClaim("rol", "api_access"));
-            //});
 
             //services.AddAuthentication(options =>
             //{
@@ -201,9 +173,7 @@ namespace DayBook
 
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
-            //services.AddSingleton<IJwtFactory, JwtFactory>();
-
+            
             services.AddScoped(typeof(IRepository<>), typeof(EntityBaseRepository<>));
 
             services.AddScoped<IManageService, ManageService>();
@@ -236,7 +206,7 @@ namespace DayBook
                           var JWToken = context.Session.GetString("JWToken");
                           if (!string.IsNullOrEmpty(JWToken))
                           {
-                              context.Request.Headers.Add("Authorization", "Bearer " + JWToken);
+                              //context.Request.Headers.Add("Authorization", "Bearer " + JWToken);
                           }
                           await next();
                       });

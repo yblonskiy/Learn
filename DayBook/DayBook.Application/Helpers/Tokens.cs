@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DayBook.Application.Interfaces;
 using DayBook.Application.Auth;
 using Newtonsoft.Json;
+using System;
 
 namespace DayBook.Application.Helpers
 {
@@ -35,5 +36,6 @@ namespace DayBook.Application.Helpers
         {
             return await jwtFactory.GenerateEncodedToken(userName, identity);
         }
+
     }
 }

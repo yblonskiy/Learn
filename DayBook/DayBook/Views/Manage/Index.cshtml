@@ -29,7 +29,7 @@
                                 @Html.DisplayFor(modelItem => item.Email)
                             </td>
                             <td>
-                                @if (item.Roles.Any(u => u == "User"))
+                                @if (item.Id != User.Identity.Name)
                                 {
                                     <button type="submit" name="id" value="@item.Id" class="btn btn-default  alert-danger">Delete</button>
                                 }
